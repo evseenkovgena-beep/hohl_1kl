@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Живое фото</title>
+<!--
+  ╔══════════════════════════════════════════════════════════════╗
+  ║  ЭТОТ ФАЙЛ МЕНЯТЬ НЕ НУЖНО.                                   ║
+  ║  Просто положите рядом с ним два файла с ТОЧНО такими именами:║
+  ║      photo.jpg   — ваша фотография                           ║
+  ║      video.mp4   — ваше видео                                 ║
+  ║  И всё заработает само.                                       ║
+  ╚══════════════════════════════════════════════════════════════╝
+-->
+<style>
+  html, body { margin: 0; height: 100%; background: #000; overflow: hidden; }
+  #photo, #v {
+    position: fixed; inset: 0;
+    width: 100%; height: 100%;
+    object-fit: contain; background: #000;
+  }
+  #photo { z-index: 1; }
+  #v     { z-index: 2; }
+  #hint {
+    position: fixed; left: 0; right: 0; bottom: calc(24px + env(safe-area-inset-bottom));
+    z-index: 3; text-align: center; padding: 0 16px;
+    font: 600 18px/1.4 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+    color: #fff; text-shadow: 0 1px 6px rgba(0,0,0,.9);
+    pointer-events: none; animation: pulse 1.6s ease-in-out infinite;
+  }
+  #hint b { color: #ffd54a; }
+  @keyframes pulse { 0%,100% { opacity: .5; } 50% { opacity: 1; } }
+</style>
+</head>
+<body>
+  <!-- фото показывается всегда (снизу); видео ложится поверх и закрывает его, когда играет -->
+  <img id="photo" src="photo.jpg" alt="">
+  <video id="v" src="video.mp4" poster="photo.jpg"
+         autoplay muted loop playsinline preload="auto"></video>
+  <div id="hint">🔊 Коснитесь экрана, чтобы включить звук</div>
+
+  <script>
+    var v    = document.getElementById('v');
+    var hint = document.getElementById('hint');
+    var hasVideo = true;
+    var loud = false;
+
+    // Если файла video.mp4 нет (или он не открылся) — прячем видео, остаётся фото.
+    v.addEventListener('error', videoFailed);
+    function videoFailed() {
+      if (!hasVideo) return;
+      hasVideo = false;
+      v.style.display = 'none';
+      hint.innerHTML = '🎬 Положите в эту папку файл <b>video.mp4</b> — и здесь заиграет видео';
+    }
+
+    // Пытаемся запустить автоматически (без звука — так разрешают телефоны).
+    window.addEventListener('load', function () {
+      var p = v.play();
+      if (p && p.catch) p.catch(function () { /* автозапуск заблокирован — запустится по касанию */ });
+    });
+
+    // Первое касание/клик: включаем звук, показываем сначала, разворачиваем на весь экран.
+    function goLoud() {
+      if (loud || !hasVideo) return;
+      loud = true;
+      v.muted = false;
+      v.currentTime = 0;
+      var p = v.play();
+      if (p && p.catch) p.catch(function () {});
+      try {
+        if (v.requestFullscreen)            v.requestFullscreen();
+        else if (v.webkitEnterFullscreen)   v.webkitEnterFullscreen();   // iPhone
+        else if (v.webkitRequestFullscreen) v.webkitRequestFullscreen();
+      } catch (e) {}
+      hint.style.display = 'none';
+    }
+    document.addEventListener('click',      goLoud);
+    document.addEventListener('touchstart', goLoud, { passive: true });
+  </script>
+</body>
+</html>
